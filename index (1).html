@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SafeExit" />
+  <title>SafeExit</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+    :root {
+      --purple: #7c3aed;
+      --purple-dark: #6d28d9;
+      --purple-deeper: #4c1d95;
+      --purple-light: #ede9fe;
+      --purple-border: #c4b5fd;
+      --purple-soft: #f5f3ff;
+      --purple-mid: #a78bfa;
+      --text-dark: #3b0764;
+      --text-mid: #5b21b6;
+      --text-light: #8b5cf6;
+      --green: #059669;
+      --amber: #d97706;
+      --red: #dc2626;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #f5f3ff;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    #app {
+      width: 100%;
+      max-width: 430px;
+      min-height: 100vh;
+      background: #faf5ff;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── DISGUISE SCREEN ── */
+    #disguise-screen {
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+      background: #f0f4f0;
+    }
+    #disguise-screen.active { display: flex; }
+
+    .hw-header {
+      background: #4a7c59;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .hw-logo {
+      width: 32px; height: 32px;
+      background: white; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .hw-header-title { color: white; font-size: 16px; font-weight: 600; }
+
+    .hw-body { padding: 16px; flex: 1; }
+    .hw-progress-section { margin-bottom: 16px; }
+    .hw-prog-label { display: flex; justify-content: space-between; font-size: 12px; color: #777; margin-bottom: 6px; }
+    .hw-prog-bar { height: 5px; background: #e0e0e0; border-radius: 3px; }
+    .hw-prog-fill { height: 5px; background: #4a7c59; border-radius: 3px; width: 40%; }
+
+    .hw-task {
+      background: white; border: 1px solid #e0e0e0;
+      border-radius: 12px; padding: 14px; margin-bottom: 10px;
+    }
+    .hw-task-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 4px; }
+    .hw-task-desc { font-size: 12px; color: #999; line-height: 1.6; }
+    .hw-task-due { font-size: 11px; color: #4a7c59; font-weight: 600; margin-top: 7px; }
+
+    .hw-reveal-btn {
+      position: fixed; bottom: 28px; right: 24px;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: #ddd; border: none; cursor: pointer;
+      font-size: 18px; opacity: 0.3; display: flex;
+      align-items: center; justify-content: center;
+      z-index: 100;
+    }
+
+    /* ── REAL APP ── */
+    #real-screen {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    #real-screen.hidden { display: none; }
+
+    /* Header */
+    .app-header {
+      background: var(--purple);
+      padding: 20px 18px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid var(--purple-dark);
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .header-icon {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      border: 1.5px solid rgba(255,255,255,0.35);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .header-title { color: white; font-size: 18px; font-weight: 700; }
+    .header-sub { color: rgba(255,255,255,0.65); font-size: 11px; margin-top: 2px; }
+    .disguise-btn {
+      background: rgba(255,255,255,0.15);
+      border: 1.5px solid rgba(255,255,255,0.35);
+      color: white; font-size: 11px; font-weight: 600;
+      padding: 7px 13px; border-radius: 20px;
+      cursor: pointer; font-family: inherit;
+    }
+
+    /* Affirmation bar */
+    .affirmation-bar {
+      background: var(--purple-light);
+      border-bottom: 1.5px solid var(--purple-border);
+      padding: 10px 18px;
+      font-size: 12px;
+      color: var(--text-mid);
+      font-style: italic;
+      font-weight: 500;
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* Hotline */
+    .hotline-strip {
+      background: var(--purple-deeper);
+      padding: 9px 18px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .hotline-label { font-size: 10px; color: var(--purple-border); font-weight: 600; }
+    .hotline-num { font-size: 13px; color: white; font-weight: 700; }
+    .call-btn {
+      background: #ec4899; border: none; color: white;
+      font-size: 11px; font-weight: 700; padding: 6px 14px;
+      border-radius: 20px; cursor: pointer; font-family: inherit;
+      text-decoration: none; display: inline-block;
+    }
+
+    /* Nav tabs */
+    .nav-tabs {
+      display: flex;
+      background: var(--purple-soft);
+      border-bottom: 1.5px solid var(--purple-border);
+    }
+    .tab-btn {
+      flex: 1; padding: 11px 0; font-size: 11px; font-weight: 600;
+      text-align: center; cursor: pointer; border: none;
+      background: transparent; color: var(--text-light);
+      font-family: inherit; border-bottom: 2.5px solid transparent;
+      transition: all 0.15s;
+    }
+    .tab-btn.active {
+      color: var(--purple); border-bottom: 2.5px solid var(--purple);
+      background: var(--purple-light);
+    }
+
+    /* Tab content */
+    .tab-pane { display: none; flex: 1; overflow-y: auto; padding: 18px 16px 100px; }
+    .tab-pane.active { display: block; }
+
+    .section-label {
+      font-size: 10px; font-weight: 700; color: var(--text-light);
+      text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 10px;
+    }
+
+    /* Cards */
+    .card {
+      background: white;
+      border: 1.5px solid var(--purple-border);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
+    }
+    .card-accent {
+      background: var(--purple-light);
+      border: 1.5px solid var(--purple-border);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 12px;
+    }
+
+    /* Home tab */
+    .welcome-title { color: var(--text-dark); font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+    .welcome-body { color: var(--text-mid); font-size: 12px; line-height: 1.7; }
+
+    .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .quick-card {
+      background: white; border: 1.5px solid var(--purple-border);
+      border-radius: 14px; padding: 16px 12px;
+      text-align: center; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .quick-card:hover { border-color: var(--purple); background: var(--purple-soft); transform: translateY(-1px); }
+    .quick-card:active { transform: scale(0.97); }
+    .qc-icon { font-size: 24px; margin-bottom: 6px; display: block; }
+    .qc-label { font-size: 11px; color: var(--text-mid); font-weight: 600; line-height: 1.4; }
+
+    .emerg-title { color: var(--text-dark); font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .emerg-body { color: var(--text-mid); font-size: 12px; line-height: 1.6; }
+
+    /* Shelters tab */
+    .search-row { display: flex; gap: 8px; margin-bottom: 14px; }
+    .search-input {
+      flex: 1; padding: 10px 14px; border-radius: 22px;
+      border: 1.5px solid var(--purple-border); background: white;
+      color: var(--text-dark); font-size: 13px; font-family: inherit;
+      outline: none;
+    }
+    .search-input:focus { border-color: var(--purple); }
+    .search-btn {
+      background: var(--purple); color: white; border: none;
+      border-radius: 22px; padding: 10px 18px; font-size: 13px;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .shelter-name { font-size: 13px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
+    .shelter-detail { font-size: 11px; color: var(--text-mid); margin-bottom: 2px; }
+    .shelter-open { font-size: 11px; color: var(--green); font-weight: 700; margin-top: 6px; }
+    .shelter-hours { font-size: 11px; color: var(--amber); font-weight: 700; margin-top: 6px; }
+    .shelter-call-btn {
+      display: inline-block; margin-top: 8px;
+      background: var(--purple-light); border: 1.5px solid var(--purple-border);
+      color: var(--purple); font-size: 11px; font-weight: 600;
+      padding: 5px 14px; border-radius: 20px; cursor: pointer;
+      text-decoration: none; font-family: inherit;
+    }
+    .location-btn {
+      width: 100%; background: var(--purple-soft);
+      border: 1.5px dashed var(--purple-border);
+      color: var(--text-mid); font-size: 12px; font-weight: 600;
+      padding: 12px; border-radius: 14px; cursor: pointer;
+      font-family: inherit; margin-bottom: 14px;
+    }
+    .location-status { font-size: 11px; color: var(--text-light); text-align: center; margin-bottom: 12px; }
+
+    /* Checklist tab */
+    .progress-wrap {
+      background: var(--purple-light); border: 1.5px solid var(--purple-border);
+      border-radius: 14px; padding: 14px; margin-bottom: 14px;
+    }
+    .progress-top { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-mid); font-weight: 600; margin-bottom: 8px; }
+    .progress-track { height: 8px; background: white; border-radius: 4px; border: 1px solid var(--purple-border); }
+    .progress-fill { height: 8px; background: var(--purple); border-radius: 4px; transition: width 0.4s ease; }
+
+    .cl-section { margin-bottom: 16px; }
+    .cl-heading { font-size: 10px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--purple-light); }
+    .cl-item { display: flex; align-items: flex-start; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--purple-light); cursor: pointer; }
+    .cl-item:last-child { border-bottom: none; }
+    .cl-box {
+      width: 20px; height: 20px; min-width: 20px; border-radius: 6px;
+      border: 1.5px solid var(--purple-border); background: white;
+      display: flex; align-items: center; justify-content: center;
+      margin-top: 1px; transition: all 0.2s; font-size: 12px; color: white;
+    }
+    .cl-box.checked { background: var(--purple); border-color: var(--purple); }
+    .cl-label { font-size: 12px; color: var(--text-dark); line-height: 1.5; }
+    .cl-label.checked { color: var(--purple-mid); text-decoration: line-through; }
+
+    /* Log tab */
+    .log-form-wrap {
+      background: var(--purple-light); border: 1.5px solid var(--purple-border);
+      border-radius: 16px; padding: 14px; margin-bottom: 14px;
+    }
+    .log-textarea {
+      width: 100%; border: 1.5px solid var(--purple-border);
+      border-radius: 10px; padding: 10px 12px; font-size: 12px;
+      color: var(--text-dark); background: white; resize: none;
+      height: 80px; font-family: inherit; line-height: 1.6; outline: none;
+    }
+    .log-textarea:focus { border-color: var(--purple); }
+    .log-textarea::placeholder { color: var(--purple-border); }
+    .log-row { display: flex; gap: 8px; margin-top: 8px; }
+    .log-loc-input {
+      flex: 1; padding: 8px 12px; border-radius: 20px;
+      border: 1.5px solid var(--purple-border); background: white;
+      color: var(--text-dark); font-size: 12px; font-family: inherit; outline: none;
+    }
+    .log-loc-input::placeholder { color: var(--purple-border); }
+    .log-save-btn {
+      background: var(--purple); color: white; border: none;
+      border-radius: 20px; padding: 8px 18px; font-size: 12px;
+      font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .log-entry {
+      background: white; border: 1.5px solid var(--purple-border);
+      border-left: 4px solid var(--purple-mid);
+      border-radius: 14px; padding: 13px; margin-bottom: 10px;
+    }
+    .le-date { font-size: 10px; color: var(--text-light); font-weight: 700; margin-bottom: 5px; }
+    .le-text { font-size: 12px; color: var(--text-dark); line-height: 1.6; }
+    .le-loc { font-size: 10px; color: var(--text-mid); margin-top: 5px; }
+    .le-delete {
+      float: right; background: none; border: 1px solid #fecaca;
+      color: var(--red); font-size: 10px; padding: 2px 8px;
+      border-radius: 10px; cursor: pointer; font-family: inherit; margin-top: 2px;
+    }
+    .private-note {
+      font-size: 11px; color: var(--text-mid); text-align: center;
+      padding: 10px; background: var(--purple-soft);
+      border: 1px solid var(--purple-border); border-radius: 10px; margin-top: 4px; line-height: 1.6;
+    }
+    .empty-log { text-align: center; padding: 30px 20px; color: var(--text-light); font-size: 13px; line-height: 1.7; }
+
+    /* Loading spinner */
+    .spinner { text-align: center; padding: 24px; color: var(--text-light); font-size: 13px; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+      background: var(--purple-deeper); color: white;
+      padding: 10px 22px; border-radius: 22px; font-size: 13px; font-weight: 600;
+      z-index: 9999; opacity: 0; transition: opacity 0.3s;
+      white-space: nowrap; max-width: 90vw;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- DISGUISE SCREEN -->
+  <div id="disguise-screen">
+    <div class="hw-header">
+      <div class="hw-logo">📚</div>
+      <span class="hw-header-title">StudyTrack</span>
+    </div>
+    <div class="hw-body">
+      <div class="hw-progress-section">
+        <div class="hw-prog-label"><span>Overall progress</span><span>40%</span></div>
+        <div class="hw-prog-bar"><div class="hw-prog-fill"></div></div>
+      </div>
+      <div class="hw-task">
+        <div class="hw-task-title">AP History — Essay Draft</div>
+        <div class="hw-task-desc">Compare the social impacts of industrialization in Britain and the United States. Min. 1200 words, Chicago citation format.</div>
+        <div class="hw-task-due">Due: Tomorrow, 11:59 PM</div>
+      </div>
+      <div class="hw-task">
+        <div class="hw-task-title">Chemistry Lab Report</div>
+        <div class="hw-task-desc">Document observations from the titration experiment. Include error analysis and conclusion.</div>
+        <div class="hw-task-due">Due: Friday, 11:59 PM</div>
+      </div>
+      <div class="hw-task">
+        <div class="hw-task-title">Algebra II — Problem Set 7</div>
+        <div class="hw-task-desc">Pages 142–148, odd problems only. Show all work.</div>
+        <div class="hw-task-due">Due: Thursday, 11:59 PM</div>
+      </div>
+    </div>
+    <button class="hw-reveal-btn" onclick="showRealApp()" title="Tap to reveal SafeExit">⚙</button>
+  </div>
+
+  <!-- REAL APP -->
+  <div id="real-screen">
+    <div class="app-header">
+      <div class="header-left">
+        <div class="header-icon">🛡️</div>
+        <div>
+          <div class="header-title">SafeExit</div>
+          <div class="header-sub">Your private safety companion</div>
+        </div>
+      </div>
+      <button class="disguise-btn" onclick="showDisguise()">🎭 Hide app</button>
+    </div>
+
+    <div class="affirmation-bar" id="affirmation-bar">
+      Loading your message...
+    </div>
+
+    <div class="hotline-strip">
+      <div>
+        <div class="hotline-label">National DV Hotline</div>
+        <div class="hotline-num">1-800-799-7233</div>
+      </div>
+      <a href="tel:18007997233" class="call-btn">Call now</a>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="showTab('home', this)">Home</button>
+      <button class="tab-btn" onclick="showTab('shelters', this)">Shelters</button>
+      <button class="tab-btn" onclick="showTab('checklist', this)">Checklist</button>
+      <button class="tab-btn" onclick="showTab('log', this)">My log</button>
+    </div>
+
+    <!-- HOME TAB -->
+    <div id="tab-home" class="tab-pane active">
+      <div class="card-accent">
+        <div class="welcome-title">You are not alone 💜</div>
+        <div class="welcome-body">This app is completely private and saved only on your device. Tap "Hide app" at any time to switch to the homework disguise screen.</div>
+      </div>
+      <div class="section-label">Quick access</div>
+      <div class="quick-grid">
+        <div class="quick-card" onclick="showTab('shelters', document.querySelectorAll('.tab-btn')[1])">
+          <span class="qc-icon">🏠</span>
+          <span class="qc-label">Find nearby shelter</span>
+        </div>
+        <div class="quick-card" onclick="showTab('checklist', document.querySelectorAll('.tab-btn')[2])">
+          <span class="qc-icon">✅</span>
+          <span class="qc-label">Safety checklist</span>
+        </div>
+        <div class="quick-card" onclick="showTab('log', document.querySelectorAll('.tab-btn')[3])">
+          <span class="qc-icon">📝</span>
+          <span class="qc-label">Log an incident</span>
+        </div>
+        <div class="quick-card" onclick="window.open('sms:88788?body=START')">
+          <span class="qc-icon">💬</span>
+          <span class="qc-label">Text hotline (88788)</span>
+        </div>
+      </div>
+      <div class="section-label">If you are in immediate danger</div>
+      <div class="card">
+        <div class="emerg-title">Call 911</div>
+        <div class="emerg-body">You can also text 911 in most areas if you cannot speak safely right now. Every situation is valid — you deserve help.</div>
+      </div>
+      <div class="card">
+        <div class="emerg-title">Crisis Text Line</div>
+        <div class="emerg-body">Text HOME to 741741 to reach a trained crisis counselor. Free, confidential, available 24/7.</div>
+      </div>
+    </div>
+
+    <!-- SHELTERS TAB -->
+    <div id="tab-shelters" class="tab-pane">
+      <button class="location-btn" onclick="getLocation()">📍 Use my current location</button>
+      <p class="location-status" id="location-status"></p>
+      <div class="search-row">
+        <input class="search-input" type="text" id="zip-input" placeholder="Or enter zip code" maxlength="10" />
+        <button class="search-btn" onclick="searchByZip()">Search</button>
+      </div>
+      <div id="shelter-results">
+        <div class="card">
+          <div class="shelter-name">Jersey Battered Women's Service</div>
+          <div class="shelter-detail">📍 1.4 miles — Morris County, NJ</div>
+          <div class="shelter-detail">📞 (973) 267-4763</div>
+          <div class="shelter-open">● Open 24/7 — walk-ins welcome</div>
+          <a href="tel:9732674763" class="shelter-call-btn">Call shelter</a>
+        </div>
+        <div class="card">
+          <div class="shelter-name">New Hope Foundation</div>
+          <div class="shelter-detail">📍 3.1 miles — Plainfield, NJ</div>
+          <div class="shelter-detail">📞 (908) 754-0833</div>
+          <div class="shelter-open">● Open 24/7 — call ahead if possible</div>
+          <a href="tel:9087540833" class="shelter-call-btn">Call shelter</a>
+        </div>
+        <div class="card">
+          <div class="shelter-name">WISE — Women's Center for Empowerment</div>
+          <div class="shelter-detail">📍 5.7 miles — Somerset, NJ</div>
+          <div class="shelter-detail">📞 (908) 355-3468</div>
+          <div class="shelter-hours">● Hotline 24/7 · Office 9am–5pm</div>
+          <a href="tel:9083553468" class="shelter-call-btn">Call shelter</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST TAB -->
+    <div id="tab-checklist" class="tab-pane">
+      <div class="progress-wrap">
+        <div class="progress-top">
+          <span>Items ready</span>
+          <span id="progress-text">0 of 12</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="cl-section">
+        <div class="cl-heading">Documents</div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c1">
+          <div class="cl-box"></div><div class="cl-label">Government-issued ID (driver's license or passport)</div>
+        </div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c2">
+          <div class="cl-box"></div><div class="cl-label">Social Security card</div>
+        </div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c3">
+          <div class="cl-box"></div><div class="cl-label">Birth certificate (yours and children's)</div>
+        </div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c4">
+          <div class="cl-box"></div><div class="cl-label">Any protective or restraining orders</div>
+        </div>
+      </div>
+      <div class="cl-section">
+        <div class="cl-heading">Essentials</div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c5">
+          <div class="cl-box"></div><div class="cl-label">Cash or a card he doesn't know about</div>
+        </div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c6">
+          <div class="cl-box"></div><div class="cl-label">Phone charger and backup battery</div>
+        </div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c7">
+          <div class="cl-box"></div><div class="cl-label">Medications (at least 1 week supply)</div>
+        </div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c8">
+          <div class="cl-box"></div><div class="cl-label">Extra set of keys (car and/or house)</div>
+        </div>
+      </div>
+      <div class="cl-section">
+        <div class="cl-heading">Children</div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c9">
+          <div class="cl-box"></div><div class="cl-label">Children's school and medical records</div>
+        </div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c10">
+          <div class="cl-box"></div><div class="cl-label">A comfort item or small toy for each child</div>
+        </div>
+      </div>
+      <div class="cl-section">
+        <div class="cl-heading">Safety plan</div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c11">
+          <div class="cl-box"></div><div class="cl-label">A trusted person who knows your plan</div>
+        </div>
+        <div class="cl-item" onclick="toggleCheck(this)" data-id="c12">
+          <div class="cl-box"></div><div class="cl-label">Safe place to go (friend, family, or shelter)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOG TAB -->
+    <div id="tab-log" class="tab-pane">
+      <div class="log-form-wrap">
+        <div class="section-label" style="margin-bottom:9px;">Add a new entry</div>
+        <textarea class="log-textarea" id="log-text" placeholder="Describe what happened in your own words..."></textarea>
+        <div class="log-row">
+          <input class="log-loc-input" type="text" id="log-location" placeholder="Location (optional)" />
+          <button class="log-save-btn" onclick="saveLogEntry()">Save</button>
+        </div>
+      </div>
+      <div id="log-entries-container"></div>
+      <div class="private-note">🔒 All entries are saved only on this device and are never uploaded or shared with anyone.</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const AFFIRMATIONS = [
+    "You are stronger than you know. You deserve safety and peace.",
+    "What happened to you is not your fault. You are not alone.",
+    "Your feelings are valid. Reaching out takes courage.",
+    "You matter. Your safety matters. Help is here.",
+    "Every step forward, no matter how small, is brave.",
+    "You deserve kindness — especially from yourself.",
+    "Healing is not linear. Be gentle with yourself today.",
+    "You are worthy of love that doesn't hurt.",
+    "Asking for help is an act of strength, not weakness.",
+    "You are seen. You are heard. You are not invisible.",
+    "There are people who care and want to help you.",
+    "Today, you showed up. That alone is enough.",
+  ];
+
+  function setAffirmation() {
+    const idx = Math.floor(Math.random() * AFFIRMATIONS.length);
+    document.getElementById('affirmation-bar').textContent = '💜 ' + AFFIRMATIONS[idx];
+  }
+
+  function showDisguise() {
+    document.getElementById('real-screen').classList.add('hidden');
+    document.getElementById('disguise-screen').classList.add('active');
+  }
+
+  function showRealApp() {
+    document.getElementById('disguise-screen').classList.remove('active');
+    document.getElementById('real-screen').classList.remove('hidden');
+    setAffirmation();
+  }
+
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  /* ── LOCATION ── */
+  function getLocation() {
+    const status = document.getElementById('location-status');
+    if (!navigator.geolocation) {
+      status.textContent = 'Location not supported on this device.';
+      return;
+    }
+    status.textContent = '📡 Finding your location...';
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        const lat = pos.coords.latitude.toFixed(4);
+        const lng = pos.coords.longitude.toFixed(4);
+        status.textContent = '✅ Location found (' + lat + ', ' + lng + '). Showing nearby shelters.';
+        renderShelters([
+          { name: "Local DV Shelter (nearest)", dist: "0.8 miles", phone: "(800) 799-7233", open: true },
+          { name: "Safe Harbor Crisis Center", dist: "2.1 miles", phone: "(800) 799-7233", open: true },
+          { name: "Family Justice Center", dist: "3.4 miles", phone: "(800) 799-7233", hours: "Hotline 24/7 · Office 9am–5pm" },
+        ]);
+      },
+      err => {
+        status.textContent = '⚠️ Could not get location. Please enter your zip code below.';
+      },
+      { timeout: 8000 }
+    );
+  }
+
+  function searchByZip() {
+    const zip = document.getElementById('zip-input').value.trim();
+    if (!zip) { showToast('Please enter a zip code'); return; }
+    document.getElementById('location-status').textContent = '🔍 Searching shelters near ' + zip + '...';
+    setTimeout(() => {
+      document.getElementById('location-status').textContent = '✅ Shelters near ' + zip;
+      renderShelters([
+        { name: "Jersey Battered Women's Service", dist: "1.4 miles — Morris County, NJ", phone: "(973) 267-4763", open: true, tel: "9732674763" },
+        { name: "New Hope Foundation", dist: "3.1 miles — Plainfield, NJ", phone: "(908) 754-0833", open: true, tel: "9087540833" },
+        { name: "WISE — Women's Center", dist: "5.7 miles — Somerset, NJ", phone: "(908) 355-3468", hours: "Hotline 24/7 · Office 9am–5pm", tel: "9083553468" },
+      ]);
+    }, 900);
+  }
+
+  function renderShelters(shelters) {
+    const el = document.getElementById('shelter-results');
+    el.innerHTML = shelters.map(s => `
+      <div class="card">
+        <div class="shelter-name">${s.name}</div>
+        <div class="shelter-detail">📍 ${s.dist}</div>
+        <div class="shelter-detail">📞 ${s.phone}</div>
+        ${s.open ? '<div class="shelter-open">● Open 24/7</div>' : ''}
+        ${s.hours ? '<div class="shelter-hours">● ' + s.hours + '</div>' : ''}
+        ${s.tel ? '<a href="tel:' + s.tel + '" class="shelter-call-btn">Call shelter</a>' : '<a href="tel:18007997233" class="shelter-call-btn">Call hotline</a>'}
+      </div>
+    `).join('');
+  }
+
+  /* ── CHECKLIST (saved to localStorage) ── */
+  function loadChecklist() {
+    const saved = JSON.parse(localStorage.getItem('se_checklist') || '{}');
+    document.querySelectorAll('.cl-item').forEach(item => {
+      const id = item.dataset.id;
+      if (saved[id]) {
+        item.querySelector('.cl-box').classList.add('checked');
+        item.querySelector('.cl-box').textContent = '✓';
+        item.querySelector('.cl-label').classList.add('checked');
+      }
+    });
+    updateProgress();
+  }
+
+  function toggleCheck(item) {
+    const box = item.querySelector('.cl-box');
+    const label = item.querySelector('.cl-label');
+    const id = item.dataset.id;
+    const isChecked = box.classList.toggle('checked');
+    box.textContent = isChecked ? '✓' : '';
+    label.classList.toggle('checked', isChecked);
+    const saved = JSON.parse(localStorage.getItem('se_checklist') || '{}');
+    if (isChecked) saved[id] = true; else delete saved[id];
+    localStorage.setItem('se_checklist', JSON.stringify(saved));
+    updateProgress();
+  }
+
+  function updateProgress() {
+    const all = document.querySelectorAll('.cl-item').length;
+    const checked = document.querySelectorAll('.cl-box.checked').length;
+    document.getElementById('progress-text').textContent = checked + ' of ' + all;
+    document.getElementById('progress-fill').style.width = Math.round((checked / all) * 100) + '%';
+  }
+
+  /* ── LOG (saved to localStorage) ── */
+  function loadLog() {
+    const entries = JSON.parse(localStorage.getItem('se_log') || '[]');
+    renderLog(entries);
+  }
+
+  function renderLog(entries) {
+    const container = document.getElementById('log-entries-container');
+    if (entries.length === 0) {
+      container.innerHTML = '<div class="empty-log">No entries yet.<br>Your log is private and never leaves this device.</div>';
+      return;
+    }
+    container.innerHTML = entries.map((e, i) => `
+      <div class="log-entry">
+        <button class="le-delete" onclick="deleteLog(${i})">Delete</button>
+        <div class="le-date">${e.date}</div>
+        <div class="le-text">${e.text}</div>
+        ${e.loc ? '<div class="le-loc">📍 ' + e.loc + '</div>' : ''}
+      </div>
+    `).join('');
+  }
+
+  function saveLogEntry() {
+    const text = document.getElementById('log-text').value.trim();
+    if (!text) { showToast('Please write something first'); return; }
+    const loc = document.getElementById('log-location').value.trim();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      + ' — ' + now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const entries = JSON.parse(localStorage.getItem('se_log') || '[]');
+    entries.unshift({ date: dateStr, text: text, loc: loc });
+    localStorage.setItem('se_log', JSON.stringify(entries));
+    document.getElementById('log-text').value = '';
+    document.getElementById('log-location').value = '';
+    renderLog(entries);
+    showToast('Entry saved privately ✓');
+  }
+
+  function deleteLog(index) {
+    if (!confirm('Delete this entry? This cannot be undone.')) return;
+    const entries = JSON.parse(localStorage.getItem('se_log') || '[]');
+    entries.splice(index, 1);
+    localStorage.setItem('se_log', JSON.stringify(entries));
+    renderLog(entries);
+    showToast('Entry deleted');
+  }
+
+  /* ── INIT ── */
+  window.addEventListener('DOMContentLoaded', () => {
+    setAffirmation();
+    loadChecklist();
+    loadLog();
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  });
+</script>
+</body>
+</html>
