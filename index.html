@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeExit</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">SE</div>
+        <div>
+          <p class="eyebrow">Private safety companion</p>
+          <h1>SafeExit</h1>
+        </div>
+      </div>
+
+      <div class="topbar-actions">
+        <button id="callButton" class="ghost-button" type="button" aria-label="Call National Domestic Violence Hotline">
+          Call now
+        </button>
+        <button id="safeExitButton" class="safe-exit-button" type="button" aria-label="Hide this app quickly">
+          Hide
+        </button>
+      </div>
+    </header>
+
+    <section class="hotline-card" aria-label="Emergency contact">
+      <div>
+        <p class="label">National DV Hotline</p>
+        <a href="tel:18007997233" class="hotline-number">1-800-799-7233</a>
+      </div>
+      <p class="hotline-note">If a call is unsafe, text <strong>START</strong> to <strong>88788</strong>.</p>
+    </section>
+
+    <nav class="tabbar" aria-label="Main navigation">
+      <button class="tab-button active" type="button" data-tab-target="homePanel">Home</button>
+      <button class="tab-button" type="button" data-tab-target="sheltersPanel">Shelters</button>
+      <button class="tab-button" type="button" data-tab-target="checklistPanel">Checklist</button>
+      <button class="tab-button" type="button" data-tab-target="logPanel">My Log</button>
+    </nav>
+
+    <main>
+      <section id="homePanel" class="panel active" aria-labelledby="homeHeading">
+        <div class="affirmation-card">
+          <p class="label">Today’s affirmation</p>
+          <h2 id="homeHeading">You are not alone.</h2>
+          <p id="affirmationText" class="affirmation-text"></p>
+          <p class="small-note">This message changes every time the app opens.</p>
+        </div>
+
+        <div class="grid-actions">
+          <button class="action-card" type="button" data-jump-tab="sheltersPanel">
+            <span class="emoji" aria-hidden="true">01</span>
+            <span>Find nearby shelter</span>
+          </button>
+          <button class="action-card" type="button" data-jump-tab="checklistPanel">
+            <span class="emoji" aria-hidden="true">02</span>
+            <span>Safety checklist</span>
+          </button>
+          <button class="action-card" type="button" data-jump-tab="logPanel">
+            <span class="emoji" aria-hidden="true">03</span>
+            <span>Log an incident</span>
+          </button>
+          <a class="action-card" href="sms:88788?body=START">
+            <span class="emoji" aria-hidden="true">04</span>
+            <span>Text START to 88788</span>
+          </a>
+        </div>
+
+        <div class="info-card">
+          <p class="label">Immediate danger</p>
+          <h3>Call 911</h3>
+          <p>You can text 911 in many areas if you cannot speak safely right now.</p>
+        </div>
+      </section>
+
+      <section id="sheltersPanel" class="panel" aria-labelledby="sheltersHeading">
+        <div class="panel-header">
+          <div>
+            <p class="label">Support near you</p>
+            <h2 id="sheltersHeading">Nearby resources</h2>
+          </div>
+          <button id="useLocationButton" class="primary-button" type="button">Use my location</button>
+        </div>
+
+        <p class="small-note">
+          Location works in modern browsers when the site is opened on <strong>HTTPS</strong> or <strong>localhost</strong> and the person allows location access.
+        </p>
+
+        <form id="zipForm" class="zip-form">
+          <label class="visually-hidden" for="zipInput">ZIP code</label>
+          <input id="zipInput" name="zip" type="text" inputmode="numeric" pattern="[0-9]{5}" maxlength="5" placeholder="Enter ZIP code" aria-describedby="zipHelp">
+          <button class="ghost-button" type="submit">Search ZIP</button>
+        </form>
+        <p id="zipHelp" class="small-note">If location is denied, a ZIP code search still works.</p>
+
+        <div id="locationStatus" class="status-card" role="status" aria-live="polite">
+          Ready to search for nearby resources.
+        </div>
+
+        <div id="resourceResults" class="resource-list" aria-live="polite"></div>
+      </section>
+
+      <section id="checklistPanel" class="panel" aria-labelledby="checklistHeading">
+        <div class="panel-header">
+          <div>
+            <p class="label">Preparation</p>
+            <h2 id="checklistHeading">Safety checklist</h2>
+          </div>
+          <div class="progress-pill">
+            <span id="checklistCount">0</span>/<span id="checklistTotal">0</span> ready
+          </div>
+        </div>
+
+        <div id="checklistGroups"></div>
+      </section>
+
+      <section id="logPanel" class="panel" aria-labelledby="logHeading">
+        <div class="panel-header">
+          <div>
+            <p class="label">Private notes</p>
+            <h2 id="logHeading">My log</h2>
+          </div>
+        </div>
+
+        <form id="logForm" class="log-form">
+          <label for="incidentText" class="label">New entry</label>
+          <textarea id="incidentText" rows="5" placeholder="Describe what happened..."></textarea>
+
+          <div class="log-controls">
+            <input id="incidentLocation" type="text" placeholder="Location (optional)">
+            <button id="attachCurrentLocationButton" class="ghost-button" type="button">Use current location</button>
+            <button id="saveLogButton" class="primary-button" type="submit">Save</button>
+          </div>
+
+          <p class="small-note">Draft text is auto-saved on every change. Saved entries stay on this device in browser storage.</p>
+        </form>
+
+        <div id="draftStatus" class="status-card" role="status" aria-live="polite">
+          Draft not saved yet.
+        </div>
+
+        <div id="logEntries" class="log-entries"></div>
+      </section>
+    </main>
+  </div>
+
+  <section id="decoyScreen" class="decoy-screen hidden" aria-hidden="true">
+    <div class="decoy-window">
+      <div class="decoy-topbar">
+        <span>Study Planner</span>
+        <button id="returnToAppButton" class="ghost-button" type="button">Return</button>
+      </div>
+      <div class="decoy-content">
+        <div class="decoy-card">
+          <p class="label">Next up</p>
+          <h2>Biology review</h2>
+          <p>Chapter 6 flashcards, two practice quizzes, and 30 minutes of reading.</p>
+        </div>
+        <div class="decoy-card">
+          <p class="label">Homework checklist</p>
+          <ul class="decoy-list">
+            <li>Finish chemistry notes</li>
+            <li>Draft English paragraph</li>
+            <li>Review algebra formulas</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="./app.js"></script>
+</body>
+</html>
