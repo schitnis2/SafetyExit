@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#6d28d9" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SafeExit" />
+  <title>Homework Planner</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!--  DISGUISE — StudyTrack homework planner           -->
+<!-- ══════════════════════════════════════════════════ -->
+<div id="disguise-app">
+  <header class="hw-header">
+    <div class="hw-brand">
+      <div class="hw-icon">📚</div>
+      <span class="hw-title">StudyTrack</span>
+    </div>
+    <button id="reveal-btn" class="hw-reveal-btn">⚙</button>
+  </header>
+
+  <div class="hw-body">
+    <div class="hw-week-label">This week's assignments</div>
+
+    <div class="hw-progress-row">
+      <span class="hw-prog-text">Progress: <span id="hw-done-count">2</span> / <span id="hw-total-count">5</span></span>
+      <div class="hw-bar"><div class="hw-fill" id="hw-fill"></div></div>
+    </div>
+
+    <ul class="hw-list" id="hw-list"></ul>
+
+    <button class="hw-add-btn" id="hw-add-btn">+ Add assignment</button>
+
+    <div class="hw-add-form hidden" id="hw-add-form">
+      <input class="hw-add-input" id="hw-add-input" type="text" placeholder="Assignment title…" maxlength="60" />
+      <div class="hw-add-row">
+        <input class="hw-add-date" id="hw-add-date" type="text" placeholder="Due date (e.g. Friday)" maxlength="30" />
+        <button class="hw-add-save" id="hw-add-save">Add</button>
+        <button class="hw-add-cancel" id="hw-add-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!--  REAL APP — SafeExit                              -->
+<!-- ══════════════════════════════════════════════════ -->
+<div id="safe-app" class="hidden">
+
+  <header class="se-header">
+    <div class="se-brand">
+      <div class="se-logo">🛡️</div>
+      <div>
+        <div class="se-title">SafeExit</div>
+        <div class="se-subtitle">Your private safety companion</div>
+      </div>
+    </div>
+    <button id="hide-btn" class="hide-btn">🎭 Hide</button>
+  </header>
+
+  <div class="affirmation-bar" id="affirmation-bar"></div>
+
+  <div class="hotline-strip">
+    <div>
+      <div class="hl-label">National DV Hotline — always free &amp; confidential</div>
+      <div class="hl-num">1-800-799-7233</div>
+    </div>
+    <a href="tel:18007997233" class="hl-call-btn">Call now</a>
+  </div>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="home">Home</button>
+    <button class="tab-btn" data-tab="shelters">Shelters</button>
+    <button class="tab-btn" data-tab="checklist">Checklist</button>
+    <button class="tab-btn" data-tab="log">My Log</button>
+  </nav>
+
+  <!-- HOME -->
+  <section id="tab-home" class="tab-content active">
+    <div class="card reassurance-card">
+      <div class="reassure-title">You are not alone 💜</div>
+      <p class="reassure-body">This app is completely private — everything stays on your device. Tap "Hide" anytime to switch to the homework screen.</p>
+    </div>
+
+    <div class="section-label">Quick access</div>
+    <div class="quick-grid">
+      <button class="quick-btn" data-goto="shelters">
+        <span class="qb-icon">🏠</span><span class="qb-label">Find shelter</span>
+      </button>
+      <button class="quick-btn" data-goto="checklist">
+        <span class="qb-icon">✅</span><span class="qb-label">Checklist</span>
+      </button>
+      <button class="quick-btn" data-goto="log">
+        <span class="qb-icon">📝</span><span class="qb-label">Log incident</span>
+      </button>
+      <a class="quick-btn" href="sms:741741?body=HOME">
+        <span class="qb-icon">💬</span><span class="qb-label">Text hotline</span>
+      </a>
+    </div>
+
+    <div class="section-label danger-lbl">Immediate danger</div>
+    <div class="card danger-card">
+      <div class="danger-title">Call 911</div>
+      <p class="danger-body">In most areas you can also text 911 if you cannot speak safely.</p>
+      <a href="tel:911" class="call-911-btn">📞 Call 911 now</a>
+    </div>
+  </section>
+
+  <!-- SHELTERS -->
+  <section id="tab-shelters" class="tab-content hidden">
+    <div class="card">
+      <div class="zip-label">Enter your zip code to find nearby shelters</div>
+      <div class="zip-row">
+        <input id="zip-input" class="zip-input" type="text" inputmode="numeric" maxlength="5" placeholder="e.g. 07060" />
+        <button id="search-btn" class="search-btn">Search</button>
+      </div>
+    </div>
+    <button class="location-btn" id="location-btn">📍 Use my current location</button>
+    <p class="location-status" id="location-status"></p>
+    <div id="shelter-results"></div>
+  </section>
+
+  <!-- CHECKLIST -->
+  <section id="tab-checklist" class="tab-content hidden">
+    <div class="card progress-card">
+      <div class="prog-top">
+        <span class="prog-label">Items ready</span>
+        <span class="prog-count" id="cl-count">0 of 0</span>
+      </div>
+      <div class="prog-track"><div class="prog-fill" id="cl-fill"></div></div>
+    </div>
+
+    <div class="section-label">Documents</div>
+    <div class="card checklist-group" id="cl-docs"></div>
+
+    <div class="section-label">Essentials</div>
+    <div class="card checklist-group" id="cl-essentials"></div>
+
+    <div class="section-label">For children</div>
+    <div class="card checklist-group" id="cl-children"></div>
+
+    <div class="section-label">My custom items</div>
+    <div class="card checklist-group" id="cl-custom">
+      <p class="cl-empty-msg" id="cl-custom-empty">No custom items yet. Add one below.</p>
+    </div>
+
+    <div class="card add-item-card">
+      <div class="section-label" style="margin:0 0 8px;">Add your own item</div>
+      <div class="add-item-row">
+        <input class="add-item-input" id="add-item-input" type="text" placeholder="e.g. Pet vaccination records" maxlength="80" />
+        <button class="add-item-btn" id="add-item-btn">Add</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOG -->
+  <section id="tab-log" class="tab-content hidden">
+    <div class="card pin-card" id="log-gate">
+      <div class="pin-icon">🔒</div>
+      <div class="pin-title">Private Log</div>
+      <p class="pin-desc">Set a 4-digit PIN to protect your entries. Stored only on this device — never uploaded anywhere.</p>
+      <input id="pin-input" class="pin-input" type="password" inputmode="numeric" maxlength="4" placeholder="● ● ● ●" />
+      <button id="pin-btn" class="pin-btn">Unlock</button>
+      <p id="pin-error" class="pin-error hidden">Incorrect PIN. Try again.</p>
+    </div>
+
+    <div id="log-content" class="hidden">
+      <div class="card">
+        <div class="section-label" style="margin:0 0 8px;">New entry</div>
+        <textarea id="entry-text" class="entry-textarea" placeholder="Describe what happened in your own words…"></textarea>
+        <input id="entry-location" class="entry-location" type="text" placeholder="Location (optional)" />
+        <button id="save-entry-btn" class="save-entry-btn">Save entry</button>
+      </div>
+      <div id="entries-list"></div>
+      <p class="log-privacy-note">🔒 Saved only on this device. Never uploaded or shared with anyone.</p>
+    </div>
+  </section>
+
+</div><!-- /safe-app -->
+
+<div class="toast" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
