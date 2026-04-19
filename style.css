@@ -460,3 +460,40 @@ body {
   white-space: nowrap; max-width: 90vw; pointer-events: none;
 }
 .toast.show { opacity: 1; }
+
+.shelter-call-btn--outline {
+  background: transparent;
+  color: var(--purple);
+  border: 1.5px solid var(--purple-bd);
+}
+.shelter-call-btn--outline:hover { background: var(--purple-lt); }
+
+.shelter-card--national { opacity: 0.85; }
+
+.hotline-divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 18px 0 10px;
+  font-size: 10px; font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.7px;
+}
+.hotline-divider::before, .hotline-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--purple-bd);
+}
+
+.shelter-loading {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 10px;
+  padding: 28px 16px;
+}
+.loading-spinner {
+  width: 28px; height: 28px;
+  border: 3px solid var(--purple-lt);
+  border-top-color: var(--purple);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 13px; font-weight: 600; color: var(--text-dark); }
+.loading-sub { font-size: 11px; color: var(--text-muted); }
