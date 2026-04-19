@@ -210,6 +210,31 @@ const SHELTER_DB = {
   "084": [
     { name: "Cumberland/Gloucester DV", city: "Vineland, NJ", addr: "Cumberland County, NJ", phone: "(856) 691-5100", tags: ["Open 24/7"] },
   ],
+  "085": [
+    { name: "New Hope Foundation – Middlesex", city: "Edison, NJ", addr: "45 Elm Row, New Brunswick, NJ", phone: "(908) 754-6855", tags: ["Open 24/7", "Walk-ins welcome"] },
+    { name: "YWCA Central NJ", city: "New Brunswick, NJ", addr: "Middlesex County, NJ", phone: "(732) 560-9100", tags: ["Open 24/7"] },
+    { name: "WISE Women's Center – NJ DV Hotline", city: "Somerset County, NJ", addr: "Somerset/Middlesex area", phone: "(908) 355-2464", tags: ["Hotline 24/7", "Covers Middlesex County"] },
+  ],
+  "086": [
+    { name: "New Hope Foundation – Middlesex", city: "Bound Brook, NJ", addr: "45 Elm Row, New Brunswick, NJ", phone: "(908) 754-6855", tags: ["Open 24/7", "Walk-ins welcome"] },
+    { name: "YWCA Central NJ", city: "New Brunswick, NJ", addr: "Middlesex County, NJ", phone: "(732) 560-9100", tags: ["Open 24/7"] },
+    { name: "Alternatives to DV – Middlesex", city: "New Brunswick, NJ", addr: "Middlesex County, NJ", phone: "(732) 249-4504", tags: ["Hotline 24/7"] },
+  ],
+  "087": [
+    { name: "Monmouth County DV Shelter", city: "Monmouth County, NJ", addr: "Monmouth County, NJ", phone: "(800) 672-7233", tags: ["Hotline 24/7"] },
+    { name: "Lunch Break / Fulfill DV Services", city: "Red Bank, NJ", addr: "Monmouth County, NJ", phone: "(732) 345-1377", tags: ["Open 24/7"] },
+    { name: "New Hope Foundation – NJ Hotline", city: "NJ Statewide", addr: "Serves Monmouth County area", phone: "(908) 754-6855", tags: ["Open 24/7"] },
+  ],
+  "088": [
+    { name: "New Hope Foundation", city: "Edison / Middlesex County, NJ", addr: "45 Elm Row, New Brunswick, NJ", phone: "(908) 754-6855", tags: ["Open 24/7", "Walk-ins welcome"] },
+    { name: "YWCA Central NJ – DV Services", city: "New Brunswick, NJ", addr: "Middlesex County, NJ", phone: "(732) 560-9100", tags: ["Open 24/7"] },
+    { name: "Alternatives to DV (Middlesex County)", city: "New Brunswick, NJ", addr: "Middlesex County, NJ", phone: "(732) 249-4504", tags: ["Hotline 24/7", "Free & confidential"] },
+  ],
+  "089": [
+    { name: "New Hope Foundation – Central NJ", city: "Somerset / Middlesex, NJ", addr: "45 Elm Row, New Brunswick, NJ", phone: "(908) 754-6855", tags: ["Open 24/7"] },
+    { name: "WISE Women's Center", city: "Somerset County, NJ", addr: "Somerset County, NJ", phone: "(908) 355-2464", tags: ["Hotline 24/7"] },
+    { name: "Interfaith Neighbors DV – Central NJ", city: "Central NJ", addr: "Serving Somerset/Middlesex border", phone: "(732) 440-5300", tags: ["Open 24/7"] },
+  ],
   /* ── New York ── */
   "100": [
     { name: "Safe Horizon DV Hotline", city: "New York, NY", addr: "Multiple locations citywide", phone: "(800) 621-4673", tags: ["Open 24/7"] },
@@ -582,25 +607,16 @@ const FALLBACK = [
   { name: "Safe Horizon Hotline", city: "Nationwide emergency referrals", addr: "safehorizon.org", phone: "(800) 621-4673", tags: ["Open 24/7", "Referrals to local shelters"] },
 ];
 
-/* ─── Helper: look up DB with fuzzy matching ────── */
-/* Tries exact 3-digit prefix, then first 2 digits   */
-function lookupShelters(zip) {
-  const p3 = zip.slice(0, 3);
-  const p2 = zip.slice(0, 2);
-  if (SHELTER_DB[p3]) return { results: SHELTER_DB[p3], matched: true };
-  // Try all DB keys that start with same first 2 digits (nearby zips)
-  const nearby = Object.keys(SHELTER_DB)
-    .filter(k => k.startsWith(p2))
-    .flatMap(k => SHELTER_DB[k]);
-  if (nearby.length) return { results: nearby.slice(0, 3), matched: true, approximate: true };
-  return { results: null, matched: false };
-}
+/* ─── AI-powered shelter search ────────────────────── */
+/* Uses Anthropic API + web search to find real shelters
+   for ANY zip code in the US. Falls back to static DB
+   if API is unavailable.                               */
 
 document.getElementById('search-btn').addEventListener('click', searchShelters);
 document.getElementById('zip-input').addEventListener('keydown', e => { if (e.key === 'Enter') searchShelters(); });
 document.getElementById('location-btn').addEventListener('click', getLocation);
 
-function searchShelters() {
+async function searchShelters() {
   const zip = document.getElementById('zip-input').value.trim();
   const container = document.getElementById('shelter-results');
   const status = document.getElementById('location-status');
@@ -612,19 +628,71 @@ function searchShelters() {
     return;
   }
   status.style.color = '';
+  showShelterLoading(container, zip);
+  status.textContent = '🔍 Finding shelters near ' + zip + '…';
 
-  const { results, matched, approximate } = lookupShelters(zip);
-
-  if (!matched) {
-    status.textContent = `No local listings for ${zip} yet — showing national hotlines. They will connect you to a shelter near you.`;
-    renderShelterCards(FALLBACK);
-  } else if (approximate) {
-    status.textContent = `📍 Nearby shelters for zip ${zip}`;
-    renderShelterCards(results);
-  } else {
-    status.textContent = `✅ Shelters near zip ${zip}`;
-    renderShelterCards(results);
+  try {
+    const shelters = await fetchSheltersAI(zip);
+    if (shelters && shelters.length > 0) {
+      status.textContent = '✅ Shelters near zip ' + zip;
+      renderShelterCards(shelters, container);
+      renderFallbackHotlines(container);
+    } else {
+      throw new Error('no results');
+    }
+  } catch(e) {
+    const p3 = zip.slice(0, 3);
+    const p2 = zip.slice(0, 2);
+    let local = SHELTER_DB[p3];
+    if (!local) {
+      const nearby = Object.keys(SHELTER_DB).filter(k => k.startsWith(p2)).flatMap(k => SHELTER_DB[k]);
+      if (nearby.length) local = nearby.slice(0, 3);
+    }
+    if (local) {
+      status.textContent = '📍 Shelters near zip ' + zip;
+      renderShelterCards(local, container);
+    } else {
+      status.textContent = 'Showing national resources — call the hotline for local referrals near ' + zip + '.';
+    }
+    renderFallbackHotlines(container);
   }
+}
+
+async function fetchSheltersAI(location) {
+  const prompt = `Search the web and find 2-3 real domestic violence shelters or women's shelters near zip code ${location} in the United States. 
+
+Return ONLY a JSON array with no extra text, no markdown, no explanation. Each object must have these exact fields:
+- name: string (shelter name)
+- city: string (city and state)
+- addr: string (full street address if available, otherwise city+state)
+- phone: string (phone number, format like (123) 456-7890)
+- tags: array of strings, pick from: ["Open 24/7", "Hotline 24/7", "Call ahead", "Walk-ins welcome"]
+
+Example format:
+[{"name":"Example Shelter","city":"Edison, NJ","addr":"123 Main St, Edison, NJ 08820","phone":"(732) 555-0100","tags":["Open 24/7"]}]
+
+Focus on shelters within 15 miles of the zip code. Only include real, verifiable organizations. If you cannot find specific local shelters, return an empty array [].`;
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+
+  if (!response.ok) throw new Error('API error');
+  const data = await response.json();
+  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+  const clean = text.replace(/```json|```/g, '').trim();
+  const match = clean.match(/\[[\s\S]*\]/);
+  if (!match) throw new Error('no JSON');
+  const parsed = JSON.parse(match[0]);
+  if (!Array.isArray(parsed) || parsed.length === 0) throw new Error('empty');
+  return parsed;
 }
 
 function getLocation() {
@@ -637,29 +705,19 @@ function getLocation() {
   navigator.geolocation.getCurrentPosition(
     pos => {
       const { latitude, longitude } = pos.coords;
-      // Reverse geocode using free nominatim API to get zip code
       fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`)
         .then(r => r.json())
         .then(data => {
           const zip = data.address && (data.address.postcode || '').replace(/\D/g, '').slice(0, 5);
           if (zip && zip.length === 5) {
             document.getElementById('zip-input').value = zip;
-            const { results, matched, approximate } = lookupShelters(zip);
-            if (matched) {
-              status.textContent = `📍 Shelters near your location (zip ${zip})`;
-              renderShelterCards(results);
-            } else {
-              status.textContent = `📍 Location found (zip ${zip}) — showing national resources. Call the hotline for local referrals.`;
-              renderShelterCards(FALLBACK);
-            }
+            searchShelters();
           } else {
-            status.textContent = '📍 Location found — showing national resources. Call for local referrals.';
-            renderShelterCards(FALLBACK);
+            status.textContent = '📍 Location found — enter your zip code above to search.';
           }
         })
         .catch(() => {
-          status.textContent = '📍 Location found — showing national resources. Call for local referrals.';
-          renderShelterCards(FALLBACK);
+          status.textContent = '⚠️ Could not determine zip. Please enter it manually.';
         });
     },
     () => {
@@ -669,8 +727,41 @@ function getLocation() {
   );
 }
 
-function renderShelterCards(list) {
-  const container = document.getElementById('shelter-results');
+function showShelterLoading(container, zip) {
+  container.innerHTML = `
+    <div class="card shelter-loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Searching for shelters near ${escHtml(zip)}…</div>
+      <div class="loading-sub">This may take a few seconds</div>
+    </div>`;
+}
+
+function renderFallbackHotlines(container) {
+  const divider = document.createElement('div');
+  divider.className = 'hotline-divider';
+  divider.innerHTML = '<span>National resources — always available</span>';
+  container.appendChild(divider);
+  FALLBACK.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'card shelter-card shelter-card--national';
+    const tagsHtml = (s.tags || []).map(t => {
+      let cls = 'shelter-tag';
+      if (t.toLowerCase().includes('open 24')) cls += ' open247';
+      else if (t.toLowerCase().includes('hotline')) cls += ' hotline';
+      else if (t.toLowerCase().includes('call ahead')) cls += ' call';
+      return `<span class="${cls}">${t}</span>`;
+    }).join('');
+    card.innerHTML = `
+      <div class="shelter-name">${escHtml(s.name)}</div>
+      <div class="shelter-city">📍 ${escHtml(s.city)}</div>
+      <div class="shelter-tags" style="margin-bottom:10px;">${tagsHtml}</div>
+      ${s.phone ? `<a href="tel:${s.phone.replace(/\D/g,'')}" class="shelter-call-btn shelter-call-btn--outline">📞 ${escHtml(s.phone)}</a>` : ''}
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderShelterCards(list, container) {
   container.innerHTML = '';
   list.slice(0, 3).forEach(s => {
     const card = document.createElement('div');
@@ -682,9 +773,8 @@ function renderShelterCards(list) {
       else if (t.toLowerCase().includes('call ahead')) cls += ' call';
       return `<span class="${cls}">${t}</span>`;
     }).join('');
-    const mapsUrl = s.addr
-      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.addr)}`
-      : '';
+    const mapsQuery = encodeURIComponent((s.addr || s.name + ' ' + s.city));
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
     card.innerHTML = `
       <div class="shelter-name">${escHtml(s.name)}</div>
       <div class="shelter-city">📍 ${escHtml(s.city)}</div>
