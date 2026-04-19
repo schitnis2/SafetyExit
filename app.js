@@ -788,8 +788,9 @@ function renderShelterCards(list, container) {
 
 /* ─── Checklist ────────────────────────────────────── */
 const CL_KEY = 'se_checklist';
-const CL_CUSTOM_KEY = 'se_cl_custom';
+const CL_ITEMS_KEY = 'se_cl_items'; // stores all editable items per group
 
+// Default items — loaded once, then user-editable and stored in localStorage
 const DEFAULT_ITEMS = {
   docs: [
     "Government-issued ID (driver's license or passport)",
@@ -809,32 +810,50 @@ const DEFAULT_ITEMS = {
     "School and medical records",
     "Children's medications",
   ],
+  custom: [],
 };
 
+function loadItems() {
+  const saved = localStorage.getItem(CL_ITEMS_KEY);
+  if (saved) return JSON.parse(saved);
+  // First run — seed from defaults and persist
+  const initial = {
+    docs: [...DEFAULT_ITEMS.docs],
+    essentials: [...DEFAULT_ITEMS.essentials],
+    children: [...DEFAULT_ITEMS.children],
+    custom: [],
+  };
+  localStorage.setItem(CL_ITEMS_KEY, JSON.stringify(initial));
+  return initial;
+}
+
+function saveItems(items) {
+  localStorage.setItem(CL_ITEMS_KEY, JSON.stringify(items));
+}
+
 function buildChecklist() {
-  const saved = JSON.parse(localStorage.getItem(CL_KEY) || '{}');
-  renderGroup('cl-docs', DEFAULT_ITEMS.docs, 'docs', saved);
-  renderGroup('cl-essentials', DEFAULT_ITEMS.essentials, 'ess', saved);
-  renderGroup('cl-children', DEFAULT_ITEMS.children, 'chld', saved);
-  renderCustomItems(saved);
+  const items = loadItems();
+  const checked = JSON.parse(localStorage.getItem(CL_KEY) || '{}');
+  renderGroup('cl-docs',       items.docs,       'docs', checked);
+  renderGroup('cl-essentials', items.essentials, 'ess',  checked);
+  renderGroup('cl-children',   items.children,   'chld', checked);
+  renderCustomGroup(items.custom, checked);
   updateProgress();
 }
 
-function renderGroup(containerId, items, prefix, saved) {
+function renderGroup(containerId, itemList, prefix, checked) {
   const el = document.getElementById(containerId);
   el.innerHTML = '';
-  items.forEach((label, i) => {
+  itemList.forEach((label, i) => {
     const key = prefix + '_' + i;
-    el.appendChild(makeCheckItem(label, key, saved[key], false));
+    el.appendChild(makeCheckItem(label, key, checked[key], prefix, i));
   });
 }
 
-function renderCustomItems(saved) {
+function renderCustomGroup(itemList, checked) {
   const container = document.getElementById('cl-custom');
-  const emptyMsg = document.getElementById('cl-custom-empty');
-  const customs = JSON.parse(localStorage.getItem(CL_CUSTOM_KEY) || '[]');
   container.innerHTML = '';
-  if (customs.length === 0) {
+  if (itemList.length === 0) {
     const p = document.createElement('p');
     p.className = 'cl-empty-msg';
     p.id = 'cl-custom-empty';
@@ -842,62 +861,111 @@ function renderCustomItems(saved) {
     container.appendChild(p);
     return;
   }
-  customs.forEach((label, i) => {
+  itemList.forEach((label, i) => {
     const key = 'custom_' + i;
-    container.appendChild(makeCheckItem(label, key, saved[key], true));
+    container.appendChild(makeCheckItem(label, key, checked[key], 'custom', i));
   });
 }
 
-function makeCheckItem(label, key, isChecked, deletable) {
-  const saved = JSON.parse(localStorage.getItem(CL_KEY) || '{}');
+function makeCheckItem(label, key, isChecked, groupPrefix, itemIndex) {
   const item = document.createElement('div');
   item.className = 'checklist-item' + (isChecked ? ' checked' : '');
+
   item.innerHTML = `
     <div class="ci-check"></div>
-    <div class="ci-label">${escHtml(label)}</div>
-    ${deletable ? `<button class="ci-delete" title="Remove">✕</button>` : ''}
+    <div class="ci-label" data-editing="false">${escHtml(label)}</div>
+    <div class="ci-actions">
+      <button class="ci-edit" title="Edit">✏️</button>
+      <button class="ci-delete" title="Remove">✕</button>
+    </div>
   `;
-  item.querySelector('.ci-check').addEventListener('click', e => {
-    e.stopPropagation();
+
+  const labelEl   = item.querySelector('.ci-label');
+  const checkEl   = item.querySelector('.ci-check');
+  const editBtn   = item.querySelector('.ci-edit');
+  const deleteBtn = item.querySelector('.ci-delete');
+
+  // Toggle checked state when clicking the check circle or the label (not buttons)
+  function toggleCheck(e) {
+    if (labelEl.dataset.editing === 'true') return;
+    if (e.target.closest('.ci-actions')) return;
     const s = JSON.parse(localStorage.getItem(CL_KEY) || '{}');
     s[key] = !s[key];
     localStorage.setItem(CL_KEY, JSON.stringify(s));
     item.classList.toggle('checked', s[key]);
     updateProgress();
-  });
-  item.addEventListener('click', e => {
-    if (e.target.classList.contains('ci-delete')) return;
-    const s = JSON.parse(localStorage.getItem(CL_KEY) || '{}');
-    s[key] = !s[key];
-    localStorage.setItem(CL_KEY, JSON.stringify(s));
-    item.classList.toggle('checked', s[key]);
-    updateProgress();
-  });
-  if (deletable) {
-    item.querySelector('.ci-delete').addEventListener('click', e => {
-      e.stopPropagation();
-      const customs = JSON.parse(localStorage.getItem(CL_CUSTOM_KEY) || '[]');
-      const idx = parseInt(key.split('_')[1]);
-      customs.splice(idx, 1);
-      localStorage.setItem(CL_CUSTOM_KEY, JSON.stringify(customs));
-      const s = JSON.parse(localStorage.getItem(CL_KEY) || '{}');
-      delete s[key];
-      localStorage.setItem(CL_KEY, JSON.stringify(s));
-      buildChecklist();
-    });
   }
+  checkEl.addEventListener('click', toggleCheck);
+  item.addEventListener('click', toggleCheck);
+
+  // Edit: swap label for an input
+  editBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (labelEl.dataset.editing === 'true') return; // already editing
+    labelEl.dataset.editing = 'true';
+    const current = labelEl.textContent;
+    labelEl.innerHTML = '';
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.className = 'ci-edit-input';
+    inp.value = current;
+    inp.maxLength = 80;
+    labelEl.appendChild(inp);
+    inp.focus();
+    editBtn.textContent = '✔️';
+    editBtn.title = 'Save';
+
+    function saveEdit() {
+      const newText = inp.value.trim();
+      if (!newText) { showToast('Item cannot be empty'); inp.focus(); return; }
+      const allItems = loadItems();
+      const groupKey = groupPrefix === 'docs' ? 'docs'
+                     : groupPrefix === 'ess'  ? 'essentials'
+                     : groupPrefix === 'chld' ? 'children'
+                     : 'custom';
+      allItems[groupKey][itemIndex] = newText;
+      saveItems(allItems);
+      buildChecklist();
+      showToast('Item updated ✓');
+    }
+    editBtn.addEventListener('click', e => { e.stopPropagation(); saveEdit(); }, { once: true });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') saveEdit(); });
+    inp.addEventListener('blur', () => {
+      // slight delay so the save-button click fires first
+      setTimeout(() => { if (labelEl.dataset.editing === 'true') saveEdit(); }, 150);
+    });
+  });
+
+  // Delete
+  deleteBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    const allItems = loadItems();
+    const groupKey = groupPrefix === 'docs' ? 'docs'
+                   : groupPrefix === 'ess'  ? 'essentials'
+                   : groupPrefix === 'chld' ? 'children'
+                   : 'custom';
+    allItems[groupKey].splice(itemIndex, 1);
+    saveItems(allItems);
+    // clean up checked state for this group (re-index)
+    const s = JSON.parse(localStorage.getItem(CL_KEY) || '{}');
+    delete s[key];
+    localStorage.setItem(CL_KEY, JSON.stringify(s));
+    buildChecklist();
+    showToast('Item removed');
+  });
+
   return item;
 }
 
 function updateProgress() {
-  const all = document.querySelectorAll('.checklist-item');
+  const all  = document.querySelectorAll('.checklist-item');
   const done = document.querySelectorAll('.checklist-item.checked');
-  const total = all.length;
-  const count = done.length;
+  const total = all.length, count = done.length;
   document.getElementById('cl-count').textContent = count + ' of ' + total;
   document.getElementById('cl-fill').style.width = total ? Math.round(count / total * 100) + '%' : '0%';
 }
 
+// "Add your own item" — now also lets user pick which group
 document.getElementById('add-item-btn').addEventListener('click', addCustomItem);
 document.getElementById('add-item-input').addEventListener('keydown', e => { if (e.key === 'Enter') addCustomItem(); });
 
@@ -905,9 +973,9 @@ function addCustomItem() {
   const input = document.getElementById('add-item-input');
   const text = input.value.trim();
   if (!text) { showToast('Please type an item first'); return; }
-  const customs = JSON.parse(localStorage.getItem(CL_CUSTOM_KEY) || '[]');
-  customs.push(text);
-  localStorage.setItem(CL_CUSTOM_KEY, JSON.stringify(customs));
+  const allItems = loadItems();
+  allItems.custom.push(text);
+  saveItems(allItems);
   input.value = '';
   buildChecklist();
   showToast('Item added ✓');
