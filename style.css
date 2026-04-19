@@ -317,11 +317,13 @@ body {
 .location-status { font-size: 11px; color: var(--text-muted); text-align: center; margin-bottom: 10px; min-height: 16px; }
 
 .shelter-card { margin-bottom: 10px; }
-.shelter-name { font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 4px; }
-.shelter-city { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; }
-.shelter-addr { font-size: 11px; color: var(--text-mid); margin-bottom: 3px; }
-.shelter-phone { font-size: 13px; color: var(--purple); font-weight: 600; text-decoration: none; display: block; margin-bottom: 6px; }
-.shelter-phone:hover { text-decoration: underline; }
+.shelter-name { font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: 3px; }
+.shelter-city { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.shelter-addr {
+  font-size: 11px; color: var(--purple); font-weight: 500;
+  text-decoration: none; display: block; margin-bottom: 8px;
+}
+.shelter-addr:hover { text-decoration: underline; }
 .shelter-tags { display: flex; flex-wrap: wrap; gap: 5px; }
 .shelter-tag {
   font-size: 10px; font-weight: 600; padding: 3px 9px;
@@ -330,6 +332,16 @@ body {
 .shelter-tag.open247 { background: #d1fae5; color: #064e3b; }
 .shelter-tag.hotline { background: #fee2e2; color: #7f1d1d; }
 .shelter-tag.call { background: #fef3c7; color: #78350f; }
+.shelter-call-btn {
+  display: block; width: 100%;
+  background: var(--purple); color: #fff;
+  text-align: center; text-decoration: none;
+  padding: 11px 0; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 700;
+  margin-top: 10px;
+  transition: background 0.15s;
+}
+.shelter-call-btn:hover { background: var(--purple-dk); }
 
 /* ── CHECKLIST ── */
 .progress-card { background: var(--purple-lt); }
