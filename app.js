@@ -885,10 +885,9 @@ function makeCheckItem(label, key, isChecked, groupPrefix, itemIndex) {
   const editBtn   = item.querySelector('.ci-edit');
   const deleteBtn = item.querySelector('.ci-delete');
 
-  // Toggle checked state when clicking the check circle or the label (not buttons)
+  // Toggle checked state when clicking the check circle or the label text (not buttons)
   function toggleCheck(e) {
     if (labelEl.dataset.editing === 'true') return;
-    if (e.target.closest('.ci-actions')) return;
     const s = JSON.parse(localStorage.getItem(CL_KEY) || '{}');
     s[key] = !s[key];
     localStorage.setItem(CL_KEY, JSON.stringify(s));
@@ -896,7 +895,10 @@ function makeCheckItem(label, key, isChecked, groupPrefix, itemIndex) {
     updateProgress();
   }
   checkEl.addEventListener('click', toggleCheck);
-  item.addEventListener('click', toggleCheck);
+  labelEl.addEventListener('click', e => {
+    if (labelEl.dataset.editing === 'true') return;
+    toggleCheck(e);
+  });
 
   // Edit: swap label for an input
   editBtn.addEventListener('click', e => {
