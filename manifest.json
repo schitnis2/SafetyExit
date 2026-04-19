@@ -2,7 +2,7 @@
   "name": "SafeExit",
   "short_name": "SafeExit",
   "description": "Your private safety companion",
-  "start_url": "/schitnis2/"
+  "start_url": "/SafetyExit/"
   "display": "standalone",
   "background_color": "#f5f3ff",
   "theme_color": "#6d28d9",
