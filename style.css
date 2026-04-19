@@ -369,12 +369,24 @@ body {
 .checklist-item.checked .ci-check::after { content: '✓'; font-weight: 700; }
 .ci-label { font-size: 13px; color: var(--text-dark); line-height: 1.4; flex: 1; }
 .checklist-item.checked .ci-label { text-decoration: line-through; color: var(--purple-mid); }
-.ci-delete {
-  background: none; border: none; color: var(--purple-bd);
-  cursor: pointer; font-size: 14px; padding: 2px 4px; line-height: 1;
-  transition: color 0.15s; flex-shrink: 0;
+.ci-actions {
+  display: flex; align-items: center; gap: 2px; flex-shrink: 0;
+  opacity: 0; transition: opacity 0.15s;
 }
-.ci-delete:hover { color: var(--red); }
+.checklist-item:hover .ci-actions,
+.checklist-item:focus-within .ci-actions { opacity: 1; }
+.ci-edit, .ci-delete {
+  background: none; border: none; cursor: pointer;
+  font-size: 13px; padding: 3px 5px; line-height: 1;
+  border-radius: 4px; transition: background 0.15s;
+}
+.ci-edit:hover  { background: var(--purple-lt); }
+.ci-delete:hover { background: #fee2e2; }
+.ci-edit-input {
+  width: 100%; font-size: 13px; padding: 2px 6px;
+  border: 1.5px solid var(--purple); border-radius: 4px;
+  outline: none; background: #fff; color: var(--text-dark);
+}
 
 .cl-empty-msg { font-size: 12px; color: var(--text-muted); font-style: italic; padding: 6px 0; }
 
